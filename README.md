@@ -384,7 +384,7 @@ EdgeDC360/
 ## Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/EdgeDC360.git
+git clone https://github.com/ajayanithaganesan/EdgeDC360.git
 cd EdgeDC360
 ```
 
