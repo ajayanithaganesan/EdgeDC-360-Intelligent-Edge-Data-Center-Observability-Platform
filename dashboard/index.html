@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EdgeDC 360 - Enterprise Operations Platform</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <i class="fa-solid fa-server"></i>
+                <div>
+                    <h2>EdgeDC 360</h2>
+                    <span class="version-tag">Enterprise v2.4</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-target="live-ops">
+                    <i class="fa-solid fa-desktop"></i>
+                    <span>Live Operations</span>
+                </button>
+                <button class="nav-item" data-target="fog-computing">
+                    <i class="fa-solid fa-cloud"></i>
+                    <span>Fog Computing</span>
+                </button>
+                <button class="nav-item" data-target="analytics">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Infrastructure Analytics</span>
+                </button>
+                <button class="nav-item" data-target="executive">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Executive Dashboard</span>
+                </button>
+            </nav>
+
+            <div class="theme-toggle">
+                <button id="themeSwitch">
+                    <i class="fa-solid fa-moon"></i>
+                    <span>Dark Mode</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="page-title">
+                    <div class="title-group">
+                        <h1 id="current-dashboard-title">Live Operations Dashboard</h1>
+                        <span class="active-location-badge" id="activeLocationBadge">Global Fleet</span>
+                    </div>
+                    <p class="subtitle" id="current-dashboard-subtitle">Real-time telemetry and health status of critical infrastructure</p>
+                </div>
+                
+                <div class="header-right">
+                    <div class="status-indicator">
+                        <span class="pulse-dot" id="systemPulseDot"></span>
+                        <span id="systemStatusText">System Healthy</span>
+                        <span class="last-updated" id="lastUpdatedTime">Updated: Just now</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-views">
+                <!-- 1. Live Operations Dashboard -->
+                <section id="live-ops" class="dashboard-view active">
+                    <!-- Location / Individual Rack Selection Cards Header -->
+                    <div class="section-label">
+                        <i class="fa-solid fa-layer-group"></i> Select Location / Individual Data Center Rack
+                    </div>
+                    <div class="rack-selector-grid">
+                        <div class="rack-card active" data-rack="global">
+                            <div class="rack-card-header">
+                                <span class="rack-flag">🌐</span>
+                                <h4>Global Summary</h4>
+                            </div>
+                            <div class="rack-card-body">
+                                <span class="status-pill status-healthy" id="badge-global">Healthy</span>
+                                <span class="rack-score" id="score-global">98/100</span>
+                            </div>
+                        </div>
+
+                        <div class="rack-card" data-rack="dublin-rack-01">
+                            <div class="rack-card-header">
+                                <span class="rack-flag">🇮🇪</span>
+                                <h4>Dublin Rack-01</h4>
+                            </div>
+                            <div class="rack-card-body">
+                                <span class="status-pill status-healthy" id="badge-dublin-rack-01">Healthy</span>
+                                <span class="rack-score" id="score-dublin-rack-01">--/100</span>
+                            </div>
+                        </div>
+
+                        <div class="rack-card" data-rack="dublin-rack-02">
+                            <div class="rack-card-header">
+                                <span class="rack-flag">🇮🇪</span>
+                                <h4>Dublin Rack-02</h4>
+                            </div>
+                            <div class="rack-card-body">
+                                <span class="status-pill status-healthy" id="badge-dublin-rack-02">Healthy</span>
+                                <span class="rack-score" id="score-dublin-rack-02">--/100</span>
+                            </div>
+                        </div>
+
+                        <div class="rack-card" data-rack="cork-rack-01">
+                            <div class="rack-card-header">
+                                <span class="rack-flag">🇮🇪</span>
+                                <h4>Cork Rack-01</h4>
+                            </div>
+                            <div class="rack-card-body">
+                                <span class="status-pill status-healthy" id="badge-cork-rack-01">Healthy</span>
+                                <span class="rack-score" id="score-cork-rack-01">--/100</span>
+                            </div>
+                        </div>
+
+                        <div class="rack-card" data-rack="cork-rack-02">
+                            <div class="rack-card-header">
+                                <span class="rack-flag">🇮🇪</span>
+                                <h4>Cork Rack-02</h4>
+                            </div>
+                            <div class="rack-card-body">
+                                <span class="status-pill status-healthy" id="badge-cork-rack-02">Healthy</span>
+                                <span class="rack-score" id="score-cork-rack-02">--/100</span>
+                            </div>
+                        </div>
+
+                        <div class="rack-card" data-rack="galway-rack-01">
+                            <div class="rack-card-header">
+                                <span class="rack-flag">🇮🇪</span>
+                                <h4>Galway Rack-01</h4>
+                            </div>
+                            <div class="rack-card-body">
+                                <span class="status-pill status-healthy" id="badge-galway-rack-01">Healthy</span>
+                                <span class="rack-score" id="score-galway-rack-01">--/100</span>
+                            </div>
+                        </div>
+
+                        <div class="rack-card" data-rack="galway-rack-02">
+                            <div class="rack-card-header">
+                                <span class="rack-flag">🇮🇪</span>
+                                <h4>Galway Rack-02</h4>
+                            </div>
+                            <div class="rack-card-body">
+                                <span class="status-pill status-healthy" id="badge-galway-rack-02">Healthy</span>
+                                <span class="rack-score" id="score-galway-rack-02">--/100</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sensor Telemetry Detail Cards -->
+                    <div class="section-label" style="margin-top: 1.5rem;">
+                        <i class="fa-solid fa-microchip"></i> Telemetry & Environmental Metrics
+                    </div>
+                    <div class="kpi-grid">
+                        <div class="kpi-card card-healthy" id="card-temp">
+                            <div class="kpi-icon"><i class="fa-solid fa-temperature-half"></i></div>
+                            <div class="kpi-details">
+                                <h3>Temperature</h3>
+                                <div class="value" id="val-temp">22.5 °C</div>
+                                <div class="kpi-subtext" id="status-temp">Normal Range (18 - 27°C)</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy" id="card-humidity">
+                            <div class="kpi-icon"><i class="fa-solid fa-droplet"></i></div>
+                            <div class="kpi-details">
+                                <h3>Humidity</h3>
+                                <div class="value" id="val-humidity">45.2 %</div>
+                                <div class="kpi-subtext" id="status-humidity">Optimal (40 - 60%)</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy" id="card-ups">
+                            <div class="kpi-icon"><i class="fa-solid fa-battery-full"></i></div>
+                            <div class="kpi-details">
+                                <h3>UPS Status</h3>
+                                <div class="value" id="val-ups">99.8 %</div>
+                                <div class="kpi-subtext" id="status-ups">Mains Active (100% Capacity)</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy" id="card-cooling">
+                            <div class="kpi-icon"><i class="fa-solid fa-fan"></i></div>
+                            <div class="kpi-details">
+                                <h3>Cooling Status</h3>
+                                <div class="value" id="val-cooling">2,240 RPM</div>
+                                <div class="kpi-subtext" id="status-cooling">HVAC Operating Normally</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy" id="card-power">
+                            <div class="kpi-icon"><i class="fa-solid fa-bolt"></i></div>
+                            <div class="kpi-details">
+                                <h3>Power Consumption</h3>
+                                <div class="value" id="val-power">14.2 kW</div>
+                                <div class="kpi-subtext" id="status-power">Load Nominal</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy" id="card-health">
+                            <div class="kpi-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+                            <div class="kpi-details">
+                                <h3>Rack Health</h3>
+                                <div class="value" id="val-health">98 / 100</div>
+                                <div class="kpi-subtext" id="status-health">All 5 Sensors Aggregated</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card glass-panel">
+                            <h3><i class="fa-solid fa-chart-line"></i> Temperature Trend (Live)</h3>
+                            <div class="chart-container">
+                                <canvas id="liveTempChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-panel">
+                            <h3><i class="fa-solid fa-chart-bar"></i> Power Load per Location Rack</h3>
+                            <div class="chart-container">
+                                <canvas id="livePowerChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. Fog Computing Dashboard -->
+                <section id="fog-computing" class="dashboard-view">
+                    <div class="kpi-grid">
+                        <div class="kpi-card card-info">
+                            <div class="kpi-icon"><i class="fa-solid fa-message"></i></div>
+                            <div class="kpi-details">
+                                <h3>Messages Generated</h3>
+                                <div class="value" id="fog-gen">124,850</div>
+                                <div class="kpi-subtext">Raw Edge Telemetry Streams</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-info">
+                            <div class="kpi-icon"><i class="fa-solid fa-filter"></i></div>
+                            <div class="kpi-details">
+                                <h3>Messages Filtered</h3>
+                                <div class="value" id="fog-filt">110,420</div>
+                                <div class="kpi-subtext">Processed locally by Fog Engine</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-info">
+                            <div class="kpi-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                            <div class="kpi-details">
+                                <h3>Messages Uploaded</h3>
+                                <div class="value" id="fog-up">14,430</div>
+                                <div class="kpi-subtext">Batched to AWS DynamoDB</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy">
+                            <div class="kpi-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+                            <div class="kpi-details">
+                                <h3>Edge Latency</h3>
+                                <div class="value" id="fog-lat">11.8 ms</div>
+                                <div class="kpi-subtext">Local Node Response Time</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy">
+                            <div class="kpi-icon"><i class="fa-solid fa-network-wired"></i></div>
+                            <div class="kpi-details">
+                                <h3>Bandwidth Savings</h3>
+                                <div class="value" id="fog-savings">88.4 %</div>
+                                <div class="kpi-subtext">Ingress Traffic Reduction</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card glass-panel">
+                            <h3><i class="fa-solid fa-pie-chart"></i> Edge Data Filtration Efficiency</h3>
+                            <div class="chart-container">
+                                <canvas id="fogDoughnutChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-panel">
+                            <h3><i class="fa-solid fa-gauge-high"></i> Latency vs. Cloud Roundtrip</h3>
+                            <div class="chart-container">
+                                <canvas id="fogLatencyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Infrastructure Analytics Dashboard -->
+                <section id="analytics" class="dashboard-view">
+                    <div class="charts-grid analytics-grid">
+                        <div class="chart-card glass-panel">
+                            <h3><i class="fa-solid fa-temperature-arrow-up"></i> Historical Temperature Trends (24h)</h3>
+                            <div class="chart-container">
+                                <canvas id="analyticsTempChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-panel">
+                            <h3><i class="fa-solid fa-fan"></i> Cooling Efficiency & Fan RPM</h3>
+                            <div class="chart-container">
+                                <canvas id="analyticsCoolingChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-panel">
+                            <h3><i class="fa-solid fa-plug-circle-bolt"></i> Energy Consumption Profile</h3>
+                            <div class="chart-container">
+                                <canvas id="analyticsEnergyChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card glass-panel">
+                            <h3><i class="fa-solid fa-car-battery"></i> UPS Performance & Battery Health</h3>
+                            <div class="chart-container">
+                                <canvas id="analyticsUpsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. Executive Dashboard -->
+                <section id="executive" class="dashboard-view">
+                    <div class="kpi-grid executive-kpis">
+                        <div class="kpi-card card-healthy" id="exec-card-health">
+                            <div class="kpi-icon"><i class="fa-solid fa-shield-heart"></i></div>
+                            <div class="kpi-details">
+                                <h3>Overall Infrastructure Health</h3>
+                                <div class="value" id="exec-health">98.5%</div>
+                                <div class="kpi-subtext">Global Fleet Operational</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy" id="exec-card-alerts">
+                            <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="kpi-details">
+                                <h3>Active Alerts</h3>
+                                <div class="value" id="exec-alerts">0</div>
+                                <div class="kpi-subtext">Critical System Failures</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-warning" id="exec-card-warnings">
+                            <div class="kpi-icon"><i class="fa-solid fa-bell"></i></div>
+                            <div class="kpi-details">
+                                <h3>Warning Count</h3>
+                                <div class="value" id="exec-warnings">1</div>
+                                <div class="kpi-subtext">Minor Sensor Deviations</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy">
+                            <div class="kpi-icon"><i class="fa-solid fa-piggy-bank"></i></div>
+                            <div class="kpi-details">
+                                <h3>Est. Bandwidth Savings</h3>
+                                <div class="value" id="exec-savings">88.4%</div>
+                                <div class="kpi-subtext">Cloud Ingress Cost Optimization</div>
+                            </div>
+                        </div>
+                        <div class="kpi-card card-healthy">
+                            <div class="kpi-icon"><i class="fa-solid fa-server"></i></div>
+                            <div class="kpi-details">
+                                <h3>System Availability</h3>
+                                <div class="value">99.99 %</div>
+                                <div class="kpi-subtext">SLA Threshold Exceeded</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card glass-panel full-width">
+                            <h3><i class="fa-solid fa-chart-line"></i> Global Cluster SLA & Uptime Summary</h3>
+                            <div class="chart-container">
+                                <canvas id="execSlaChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

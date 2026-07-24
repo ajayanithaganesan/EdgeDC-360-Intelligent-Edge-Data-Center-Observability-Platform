@@ -430,6 +430,52 @@ to
 
 Update the values according to your AWS configuration.
 
+## Run a local MQTT smoke test on Windows
+
+If you have Docker Desktop installed, you can run the broker, gateway, and simulator together with one command:
+
+```powershell
+.\scripts\run_mqtt_smoke_test.ps1
+```
+
+Optional arguments:
+
+```powershell
+.\scripts\run_mqtt_smoke_test.ps1 -Cycles 5 -Sleep 1
+```
+
+This script:
+
+- Starts a local Mosquitto broker in Docker
+- Launches the edge gateway in MQTT mode
+- Runs the sensor simulator against the broker
+- Cleans everything up afterward
+
+## Run without Docker
+
+If you do not want Docker, use the no-broker smoke test instead:
+
+```powershell
+python .\scripts\run_local_smoke_test.py
+```
+
+Optional:
+
+```powershell
+python .\scripts\run_local_smoke_test.py --cycles 3
+python .\scripts\run_local_smoke_test.py --buffer-offline
+```
+
+This verifies:
+
+- Sensor generation
+- JSON serialization and parsing
+- Edge processing
+- Health scoring
+- Optional SQLite buffering
+
+This is the recommended next step if you want to keep moving without a broker.
+
 ---
 
 # 🎯 Project Status
@@ -437,11 +483,11 @@ Update the values according to your AWS configuration.
 | Component        | Status |
 | ---------------- | ------ |
 | Project Setup    | ✅      |
-| Sensor Simulator | 🚧     |
-| Edge Gateway     | 🚧     |
+| Sensor Simulator | 🚧 scaffolded |
+| Edge Gateway     | 🚧 scaffolded |
 | AWS Backend      | 🚧     |
 | Dashboards       | 🚧     |
-| Documentation    | 🚧     |
+| Documentation    | 🚧 updating |
 
 ---
 
