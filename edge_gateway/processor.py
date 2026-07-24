@@ -141,13 +141,16 @@ class EdgeGatewayProcessor:
             )
 
         if self.duplicate_filter.is_duplicate(reading):
+            rack_key = (reading.site, reading.rack_id)
+            current_window = self.window.get(rack_key) or [reading]
+            health = self.health_engine.assess(current_window)
             return GatewayDecision(
                 timestamp=utc_now(),
                 reading=reading,
                 decision=DecisionType.FILTERED,
                 reason="duplicate reading",
-                health_score=100,
-                health_state=HealthState.HEALTHY,
+                health_score=health.health_score,
+                health_state=health.health_state,
                 upload=False,
             )
 

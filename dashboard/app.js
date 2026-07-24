@@ -313,56 +313,102 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (selectedRacks.length > 0) {
-                    let totalTemp = 0, totalHum = 0, totalUps = 0, totalCooling = 0, totalPower = 0, totalHealth = 0;
-                    let activeCriticals = 0, activeWarnings = 0;
+                    let activeCriticals = 0, activeWarnings = 0, healthyCount = 0;
+                    let maxTemp = -Infinity, maxTempRack = "";
+                    let minHum = Infinity, maxHum = -Infinity;
+                    let minUps = Infinity, minUpsRack = "";
+                    let maxCooling = -Infinity, maxCoolingRack = "";
+                    let totalPower = 0;
+                    let minHealth = Infinity;
+
+                    let singleTemp = 0, singleHum = 0, singleUps = 0, singleCooling = 0, singlePower = 0, singleHealth = 0;
 
                     selectedRacks.forEach(rk => {
                         const rData = racks[rk];
                         const s = rData.sensors || {};
-                        totalTemp += s.temperature ? s.temperature.value : 22.5;
-                        totalHum += s.humidity ? s.humidity.value : 45.0;
-                        totalUps += s.ups ? s.ups.value : 100.0;
-                        totalCooling += s.cooling ? s.cooling.value : 2200;
                         
+                        const tempVal = s.temperature ? s.temperature.value : 22.5;
+                        const humVal = s.humidity ? s.humidity.value : 45.0;
+                        const upsVal = s.ups ? s.ups.value : 100.0;
+                        const coolVal = s.cooling ? s.cooling.value : 2200;
                         const pWatts = s.power ? s.power.value : 400;
-                        totalPower += (pWatts > 100 ? pWatts / 1000.0 : pWatts);
-                        
+                        const pKw = pWatts > 100 ? pWatts / 1000.0 : pWatts;
                         const score = rData.health_score !== undefined ? rData.health_score : 100;
-                        totalHealth += score;
 
                         if (rData.health_state === "critical") activeCriticals++;
                         else if (rData.health_state === "warning") activeWarnings++;
+                        else healthyCount++;
+
+                        totalPower += pKw;
+
+                        if (tempVal > maxTemp) { maxTemp = tempVal; maxTempRack = rk; }
+                        if (humVal < minHum) minHum = humVal;
+                        if (humVal > maxHum) maxHum = humVal;
+                        if (upsVal < minUps) { minUps = upsVal; minUpsRack = rk; }
+                        if (coolVal > maxCooling) { maxCooling = coolVal; maxCoolingRack = rk; }
+                        if (score < minHealth) minHealth = score;
+
+                        singleTemp = tempVal;
+                        singleHum = humVal;
+                        singleUps = upsVal;
+                        singleCooling = coolVal;
+                        singlePower = pKw;
+                        singleHealth = score;
                     });
 
-                    const count = selectedRacks.length;
-                    const avgTemp = (totalTemp / count).toFixed(1);
-                    const avgHum = (totalHum / count).toFixed(1);
-                    const avgUps = (totalUps / count).toFixed(1);
-                    const avgCooling = Math.round(totalCooling / count);
-                    const avgPower = (totalPower / count).toFixed(2);
-                    const avgHealth = Math.round(totalHealth / count);
+                    if (selectedLocation === "global") {
+                        // Option 1: Fleet Aggregates & Peak Extremity Highlighting
+                        document.getElementById("val-temp").innerText = `${maxTemp.toFixed(1)} °C`;
+                        document.getElementById("val-humidity").innerText = `${minHum.toFixed(1)} - ${maxHum.toFixed(1)} %`;
+                        document.getElementById("val-ups").innerText = `${minUps.toFixed(1)} %`;
+                        document.getElementById("val-cooling").innerText = `${Math.round(maxCooling)} RPM`;
+                        document.getElementById("val-power").innerText = `${totalPower.toFixed(2)} kW`;
+                        document.getElementById("val-health").innerText = `${minHealth} / 100`;
 
-                    document.getElementById("val-temp").innerText = `${avgTemp} °C`;
-                    document.getElementById("val-humidity").innerText = `${avgHum} %`;
-                    document.getElementById("val-ups").innerText = `${avgUps} %`;
-                    document.getElementById("val-cooling").innerText = `${avgCooling} RPM`;
-                    document.getElementById("val-power").innerText = `${avgPower} kW`;
-                    document.getElementById("val-health").innerText = `${avgHealth} / 100`;
+                        document.getElementById("status-temp").innerText = maxTemp >= 36 ? `Peak Temp (${maxTempRack}) [CRITICAL]` : maxTemp >= 30 ? `Peak Temp (${maxTempRack}) [WARNING]` : `Peak Temp (${maxTempRack})`;
+                        document.getElementById("status-humidity").innerText = `Fleet Humidity Range`;
+                        document.getElementById("status-ups").innerText = `Lowest Reserve (${minUpsRack})`;
+                        document.getElementById("status-cooling").innerText = `Peak Cooling Load (${maxCoolingRack})`;
+                        document.getElementById("status-power").innerText = `Total Combined Fleet Load`;
+                        document.getElementById("status-health").innerText = `${healthyCount} Healthy, ${activeWarnings} Warn, ${activeCriticals} Crit`;
 
-                    // Temperature alert highlights
-                    if (avgTemp > 35 || activeCriticals > 0) {
-                        updateCardClass("card-temp", "card-critical");
-                        document.getElementById("status-temp").innerText = "CRITICAL: Sensor Limit Exceeded";
-                    } else if (avgTemp > 28 || activeWarnings > 0) {
-                        updateCardClass("card-temp", "card-warning");
-                        document.getElementById("status-temp").innerText = "WARNING: Elevated Temperature";
+                        if (maxTemp >= 36 || activeCriticals > 0) {
+                            updateCardClass("card-temp", "card-critical");
+                        } else if (maxTemp >= 30 || activeWarnings > 0) {
+                            updateCardClass("card-temp", "card-warning");
+                        } else {
+                            updateCardClass("card-temp", "card-healthy");
+                        }
                     } else {
-                        updateCardClass("card-temp", "card-healthy");
-                        document.getElementById("status-temp").innerText = "Normal Range (18 - 27°C)";
+                        // Individual Rack View
+                        document.getElementById("val-temp").innerText = `${singleTemp.toFixed(1)} °C`;
+                        document.getElementById("val-humidity").innerText = `${singleHum.toFixed(1)} %`;
+                        document.getElementById("val-ups").innerText = `${singleUps.toFixed(1)} %`;
+                        document.getElementById("val-cooling").innerText = `${Math.round(singleCooling)} RPM`;
+                        document.getElementById("val-power").innerText = `${singlePower.toFixed(2)} kW`;
+                        document.getElementById("val-health").innerText = `${singleHealth} / 100`;
+
+                        document.getElementById("status-humidity").innerText = `Optimal Range (40 - 60%)`;
+                        document.getElementById("status-ups").innerText = `Mains Active`;
+                        document.getElementById("status-cooling").innerText = `HVAC Operating Normally`;
+                        document.getElementById("status-power").innerText = `Rack Power Load`;
+                        document.getElementById("status-health").innerText = `All 5 Sensors Aggregated`;
+
+                        if (singleTemp >= 36 || activeCriticals > 0) {
+                            updateCardClass("card-temp", "card-critical");
+                            document.getElementById("status-temp").innerText = "CRITICAL: Sensor Limit Exceeded";
+                        } else if (singleTemp >= 30 || activeWarnings > 0) {
+                            updateCardClass("card-temp", "card-warning");
+                            document.getElementById("status-temp").innerText = "WARNING: Elevated Temperature";
+                        } else {
+                            updateCardClass("card-temp", "card-healthy");
+                            document.getElementById("status-temp").innerText = "Normal Range (18 - 27°C)";
+                        }
                     }
 
                     // Executive KPIs
-                    document.getElementById("exec-health").innerText = `${avgHealth}.0%`;
+                    const globalHealthAvg = Math.round(selectedRacks.reduce((acc, rk) => acc + (racks[rk].health_score || 100), 0) / selectedRacks.length);
+                    document.getElementById("exec-health").innerText = `${globalHealthAvg}.0%`;
                     document.getElementById("exec-alerts").innerText = `${activeCriticals}`;
                     document.getElementById("exec-warnings").innerText = `${activeWarnings}`;
                     updateCardClass("exec-card-alerts", activeCriticals > 0 ? "card-critical" : "card-healthy");
