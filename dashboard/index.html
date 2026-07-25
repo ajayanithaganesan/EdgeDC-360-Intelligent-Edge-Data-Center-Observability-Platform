@@ -164,7 +164,7 @@
                         <i class="fa-solid fa-microchip"></i> Telemetry & Environmental Metrics
                     </div>
                     <div class="kpi-grid">
-                        <div class="kpi-card card-healthy" id="card-temp">
+                        <div class="kpi-card card-healthy active-sensor-card" id="card-temp" data-metric="temperature">
                             <div class="kpi-icon"><i class="fa-solid fa-temperature-half"></i></div>
                             <div class="kpi-details">
                                 <h3>Temperature</h3>
@@ -172,7 +172,7 @@
                                 <div class="kpi-subtext" id="status-temp">Normal Range (18 - 27°C)</div>
                             </div>
                         </div>
-                        <div class="kpi-card card-healthy" id="card-humidity">
+                        <div class="kpi-card card-healthy" id="card-humidity" data-metric="humidity">
                             <div class="kpi-icon"><i class="fa-solid fa-droplet"></i></div>
                             <div class="kpi-details">
                                 <h3>Humidity</h3>
@@ -180,7 +180,7 @@
                                 <div class="kpi-subtext" id="status-humidity">Optimal (40 - 60%)</div>
                             </div>
                         </div>
-                        <div class="kpi-card card-healthy" id="card-ups">
+                        <div class="kpi-card card-healthy" id="card-ups" data-metric="ups">
                             <div class="kpi-icon"><i class="fa-solid fa-battery-full"></i></div>
                             <div class="kpi-details">
                                 <h3>UPS Status</h3>
@@ -188,7 +188,7 @@
                                 <div class="kpi-subtext" id="status-ups">Mains Active (100% Capacity)</div>
                             </div>
                         </div>
-                        <div class="kpi-card card-healthy" id="card-cooling">
+                        <div class="kpi-card card-healthy" id="card-cooling" data-metric="cooling">
                             <div class="kpi-icon"><i class="fa-solid fa-fan"></i></div>
                             <div class="kpi-details">
                                 <h3>Cooling Status</h3>
@@ -196,7 +196,7 @@
                                 <div class="kpi-subtext" id="status-cooling">HVAC Operating Normally</div>
                             </div>
                         </div>
-                        <div class="kpi-card card-healthy" id="card-power">
+                        <div class="kpi-card card-healthy" id="card-power" data-metric="power">
                             <div class="kpi-icon"><i class="fa-solid fa-bolt"></i></div>
                             <div class="kpi-details">
                                 <h3>Power Consumption</h3>
@@ -204,7 +204,7 @@
                                 <div class="kpi-subtext" id="status-power">Load Nominal</div>
                             </div>
                         </div>
-                        <div class="kpi-card card-healthy" id="card-health">
+                        <div class="kpi-card card-healthy" id="card-health" data-metric="health">
                             <div class="kpi-icon"><i class="fa-solid fa-heart-pulse"></i></div>
                             <div class="kpi-details">
                                 <h3>Rack Health</h3>
@@ -216,7 +216,7 @@
 
                     <div class="charts-grid">
                         <div class="chart-card glass-panel">
-                            <h3><i class="fa-solid fa-chart-line"></i> Temperature Trend (Live)</h3>
+                            <h3><i class="fa-solid fa-chart-line"></i> <span id="liveChartTitle">Temperature Trend (Live)</span></h3>
                             <div class="chart-container">
                                 <canvas id="liveTempChart"></canvas>
                             </div>

@@ -142,16 +142,22 @@ def main():
                 cloud_payload["acknowledged"] = True
             state["racks"][rack_key] = cloud_payload
 
+            state["history"].setdefault("humidity", [])
+            state["history"].setdefault("health", [])
+
             time_str = datetime.now().isoformat()
             state["history"]["timestamps"].append(time_str)
             state["history"]["temperature"].append(cloud_payload["sensors"]["temperature"]["value"])
+            state["history"]["humidity"].append(cloud_payload["sensors"]["humidity"]["value"])
             state["history"]["cooling"].append(cloud_payload["sensors"]["cooling"]["value"])
             state["history"]["power"].append(cloud_payload["sensors"]["power"]["value"])
             state["history"]["ups"].append(cloud_payload["sensors"]["ups"]["value"])
+            state["history"]["health"].append(cloud_payload["health_score"])
 
             if len(state["history"]["timestamps"]) > 15:
                 for hk in state["history"]:
-                    state["history"][hk].pop(0)
+                    if len(state["history"][hk]) > 0:
+                        state["history"][hk].pop(0)
 
             try:
                 with open(metrics_file, "w", encoding="utf-8") as f:

@@ -433,6 +433,15 @@ body {
     overflow: hidden;
 }
 
+.kpi-card[data-metric] {
+    cursor: pointer;
+}
+
+.kpi-card.active-sensor-card {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.4) !important;
+}
+
 .kpi-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);

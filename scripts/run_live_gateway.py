@@ -87,9 +87,11 @@ def main():
         "history": {
             "timestamps": [],
             "temperature": [],
+            "humidity": [],
             "cooling": [],
             "power": [],
-            "ups": []
+            "ups": [],
+            "health": []
         }
     }
 
@@ -181,9 +183,11 @@ def main():
                         if rack_key == "Dublin-rack-01":
                             state["history"]["timestamps"].append(timestamp_str)
                             state["history"]["temperature"].append(cloud_payload["sensors"]["temperature"]["value"])
+                            state["history"]["humidity"].append(cloud_payload["sensors"]["humidity"]["value"])
                             state["history"]["cooling"].append(cloud_payload["sensors"]["cooling"]["value"])
                             state["history"]["power"].append(cloud_payload["sensors"]["power"]["value"])
                             state["history"]["ups"].append(cloud_payload["sensors"]["ups"]["value"])
+                            state["history"]["health"].append(cloud_payload["health_score"])
 
                             # Keep history list under 15 items
                             if len(state["history"]["timestamps"]) > 15:

@@ -29,6 +29,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    let selectedSensorMetric = "temperature";
+    const sensorKpiCards = document.querySelectorAll(".kpi-card[data-metric]");
+    sensorKpiCards.forEach(card => {
+        card.addEventListener("click", () => {
+            sensorKpiCards.forEach(c => c.classList.remove("active-sensor-card"));
+            card.classList.add("active-sensor-card");
+            selectedSensorMetric = card.getAttribute("data-metric") || "temperature";
+            fetchTelemetry();
+        });
+    });
+
     const btnAckAlert = document.getElementById("btnAckAlert");
     if (btnAckAlert) {
         btnAckAlert.addEventListener("click", async () => {
@@ -135,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
             maintainAspectRatio: false,
             animation: false,
             plugins: { legend: { display: false } },
-            scales: { y: { min: 15, max: 95 } }
+            scales: { y: { suggestedMin: 0 } }
         }
     });
 
@@ -508,9 +519,31 @@ document.addEventListener("DOMContentLoaded", () => {
                     return t;
                 });
 
-                // Live Temperature Trend
+                // Dynamic Live Trend Chart based on selected sensor card
+                const metricConfigs = {
+                    temperature: { title: "Temperature Trend (Live)", label: "Temperature (°C)", color: "#3b82f6", yMin: 15, yMax: 95, data: data.history.temperature || [] },
+                    humidity: { title: "Humidity Trend (Live)", label: "Humidity (%)", color: "#06b6d4", yMin: 0, yMax: 100, data: data.history.humidity || [] },
+                    ups: { title: "UPS Battery Trend (Live)", label: "UPS Battery (%)", color: "#10b981", yMin: 0, yMax: 100, data: data.history.ups || [] },
+                    cooling: { title: "Cooling Speed Trend (Live)", label: "Cooling Speed (RPM)", color: "#8b5cf6", yMin: 1000, yMax: 3500, data: data.history.cooling || [] },
+                    power: { title: "Power Consumption Trend (Live)", label: "Power Load (kW)", color: "#f59e0b", yMin: 0, yMax: 10, data: (data.history.power || []).map(p => (p > 50 ? p / 1000.0 : p)) },
+                    health: { title: "Rack Health Score Trend (Live)", label: "Health Score (/100)", color: "#10b981", yMin: 0, yMax: 100, data: data.history.health || [] }
+                };
+
+                const currentConfig = metricConfigs[selectedSensorMetric] || metricConfigs.temperature;
+                const liveChartTitleElem = document.getElementById("liveChartTitle");
+                if (liveChartTitleElem) {
+                    liveChartTitleElem.innerText = currentConfig.title;
+                }
+
                 liveTempChart.data.labels = timeLabels;
-                liveTempChart.data.datasets[0].data = data.history.temperature;
+                liveTempChart.data.datasets[0].label = currentConfig.label;
+                liveTempChart.data.datasets[0].borderColor = currentConfig.color;
+                liveTempChart.data.datasets[0].backgroundColor = currentConfig.color + "1a";
+                liveTempChart.data.datasets[0].data = currentConfig.data;
+                if (liveTempChart.options.scales && liveTempChart.options.scales.y) {
+                    liveTempChart.options.scales.y.min = currentConfig.yMin;
+                    liveTempChart.options.scales.y.max = currentConfig.yMax;
+                }
                 liveTempChart.update();
 
                 // Cooling Efficiency Chart
