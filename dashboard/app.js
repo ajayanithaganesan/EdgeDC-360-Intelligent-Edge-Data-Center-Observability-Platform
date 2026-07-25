@@ -407,12 +407,29 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
 
                     // Executive KPIs
-                    const globalHealthAvg = Math.round(selectedRacks.reduce((acc, rk) => acc + (racks[rk].health_score || 100), 0) / selectedRacks.length);
-                    document.getElementById("exec-health").innerText = `${globalHealthAvg}.0%`;
-                    document.getElementById("exec-alerts").innerText = `${activeCriticals}`;
-                    document.getElementById("exec-warnings").innerText = `${activeWarnings}`;
-                    updateCardClass("exec-card-alerts", activeCriticals > 0 ? "card-critical" : "card-healthy");
-                    updateCardClass("exec-card-warnings", activeWarnings > 0 ? "card-warning" : "card-healthy");
+                    const globalHealthSum = rackKeys.reduce((acc, rk) => acc + (racks[rk].health_score !== undefined ? racks[rk].health_score : 100), 0);
+                    const globalHealthAvg = (globalHealthSum / rackKeys.length).toFixed(1);
+                    const globalCriticals = rackKeys.filter(rk => racks[rk].health_state === "critical").length;
+                    const globalWarnings = rackKeys.filter(rk => racks[rk].health_state === "warning").length;
+
+                    document.getElementById("exec-health").innerText = `${globalHealthAvg}%`;
+                    document.getElementById("exec-alerts").innerText = `${globalCriticals}`;
+                    document.getElementById("exec-warnings").innerText = `${globalWarnings}`;
+
+                    const healthSubtextElem = document.getElementById("exec-health-subtext");
+                    if (globalCriticals > 0) {
+                        updateCardClass("exec-card-health", "card-critical");
+                        if (healthSubtextElem) healthSubtextElem.innerText = `CRITICAL: ${globalCriticals} Rack Failure(s)`;
+                    } else if (globalWarnings > 0 || parseFloat(globalHealthAvg) < 95) {
+                        updateCardClass("exec-card-health", "card-warning");
+                        if (healthSubtextElem) healthSubtextElem.innerText = `WARNING: ${globalWarnings} Degradation(s)`;
+                    } else {
+                        updateCardClass("exec-card-health", "card-healthy");
+                        if (healthSubtextElem) healthSubtextElem.innerText = `Global Fleet Operational`;
+                    }
+
+                    updateCardClass("exec-card-alerts", globalCriticals > 0 ? "card-critical" : "card-healthy");
+                    updateCardClass("exec-card-warnings", globalWarnings > 0 ? "card-warning" : "card-healthy");
 
                     // Pulse Indicator
                     if (activeCriticals > 0) {
