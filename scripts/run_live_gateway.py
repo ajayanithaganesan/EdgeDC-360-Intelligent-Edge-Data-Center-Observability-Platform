@@ -155,6 +155,13 @@ def main():
                         # Clear window for this rack
                         processor.window[(site, rack_id)] = []
 
+                        rack_key = f"{site}-{rack_id}"
+                        # Preserve acknowledged status from signal file or state
+                        if active_anomaly and _normalize_key(str(active_anomaly.get("rack", ""))) == _normalize_key(rack_key) and active_anomaly.get("acknowledged"):
+                            cloud_payload["acknowledged"] = True
+                        elif state.get("racks", {}).get(rack_key, {}).get("acknowledged"):
+                            cloud_payload["acknowledged"] = True
+
                         # Publish 5-sensor aggregated item to AWS IoT
                         json_payload = json.dumps(cloud_payload)
                         try:

@@ -185,6 +185,44 @@ body {
     margin-top: 0.25rem;
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.btn-ack {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 30px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+    animation: pulse 1.5s infinite;
+    transition: all 0.3s ease;
+}
+
+.btn-ack:hover {
+    background: rgba(239, 68, 68, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-ack.acked {
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+    box-shadow: none;
+    animation: none;
+    cursor: default;
+}
+
 .status-indicator {
     display: flex;
     align-items: center;

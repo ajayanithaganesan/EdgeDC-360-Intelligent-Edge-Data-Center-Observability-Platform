@@ -111,8 +111,13 @@ def main():
 
     try:
         while True:
-            # Touch/refresh signal file
+            # Touch/refresh signal file (preserving operator acknowledged status)
             try:
+                if signal_file.exists():
+                    with open(signal_file, "r", encoding="utf-8") as sf:
+                        curr = json.load(sf)
+                    if curr.get("acknowledged"):
+                        anomaly_payload["acknowledged"] = True
                 with open(signal_file, "w", encoding="utf-8") as sf:
                     json.dump(anomaly_payload, sf)
             except Exception:
@@ -133,6 +138,8 @@ def main():
                     pass
 
             cloud_payload["timestamp"] = datetime.now(timezone.utc).isoformat()
+            if anomaly_payload.get("acknowledged") or state.get("racks", {}).get(rack_key, {}).get("acknowledged"):
+                cloud_payload["acknowledged"] = True
             state["racks"][rack_key] = cloud_payload
 
             time_str = datetime.now().isoformat()

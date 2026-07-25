@@ -29,6 +29,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    const btnAckAlert = document.getElementById("btnAckAlert");
+    if (btnAckAlert) {
+        btnAckAlert.addEventListener("click", async () => {
+            try {
+                const res = await fetch("/api/acknowledge", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ rack_id: selectedLocation })
+                });
+                if (res.ok) {
+                    btnAckAlert.className = "btn-ack acked";
+                    btnAckAlert.innerHTML = '<i class="fa-solid fa-check-circle"></i> Alert Acknowledged (Silenced)';
+                }
+            } catch (err) {
+                console.log("Acknowledge error:", err);
+            }
+        });
+    }
+
     function updateCardClass(cardId, newClass) {
         const card = document.getElementById(cardId);
         if (card) {
@@ -431,7 +450,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateCardClass("exec-card-alerts", globalCriticals > 0 ? "card-critical" : "card-healthy");
                     updateCardClass("exec-card-warnings", globalWarnings > 0 ? "card-warning" : "card-healthy");
 
-                    // Pulse Indicator
+                    // Pulse Indicator & Acknowledge Alert Button State
+                    const isAnyAcked = selectedRacks.some(rk => racks[rk] && racks[rk].acknowledged);
+                    if (btnAckAlert) {
+                        if (activeCriticals > 0 || globalCriticals > 0) {
+                            btnAckAlert.style.display = "inline-flex";
+                            if (isAnyAcked) {
+                                btnAckAlert.className = "btn-ack acked";
+                                btnAckAlert.innerHTML = '<i class="fa-solid fa-check-circle"></i> Alert Acknowledged (Silenced)';
+                            } else {
+                                btnAckAlert.className = "btn-ack";
+                                btnAckAlert.innerHTML = '<i class="fa-solid fa-bell-slash"></i> Acknowledge Alert';
+                            }
+                        } else {
+                            btnAckAlert.style.display = "none";
+                        }
+                    }
+
                     if (activeCriticals > 0) {
                         document.getElementById("systemStatusText").innerText = "System Critical Alert";
                         document.getElementById("systemPulseDot").className = "pulse-dot critical";

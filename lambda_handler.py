@@ -76,9 +76,62 @@ def lambda_handler(event, context):
                 }
                 table.put_item(Item=sensor_item)
 
-        # Trigger SNS alert strictly for CRITICAL failures
+        # Extract acknowledgment flag
+        acknowledged = bool(event.get("acknowledged", False))
+
+        # Check existing alert tracking state from DynamoDB
+        state_pk = f"STATE#{site}-{rack_id}"
+        last_sns_timestamp = 0
+        is_previously_ack = False
+
+        try:
+            state_resp = table.get_item(Key={"deviceId": state_pk, "timestamp": Decimal("0")})
+            if "Item" in state_resp:
+                last_sns_timestamp = int(state_resp["Item"].get("last_sns_timestamp", 0))
+                is_previously_ack = bool(state_resp["Item"].get("acknowledged", False))
+        except Exception:
+            pass
+
+        is_acknowledged = acknowledged or is_previously_ack
+
+        # Handle alert logic for CRITICAL status
         if status == "CRITICAL":
-            _send_sns_alert(site, rack_id, health_state, health_score, sensors, status)
+            now_ts = timestamp
+            cooldown_seconds = int(os.environ.get("SNS_COOLDOWN_SECONDS", "120"))  # 2 minutes (120s) default
+
+            if is_acknowledged:
+                print(f"INFO: Critical alert for {site}-{rack_id} is ACKNOWLEDGED by operator. Skipping SNS dispatch.")
+            elif last_sns_timestamp > 0 and (now_ts - last_sns_timestamp) < cooldown_seconds:
+                elapsed = now_ts - last_sns_timestamp
+                print(f"INFO: SNS alert for {site}-{rack_id} rate-limited. Last sent {elapsed}s ago (cooldown: {cooldown_seconds}s). Skipping SNS.")
+            else:
+                _send_sns_alert(site, rack_id, health_state, health_score, sensors, status)
+                last_sns_timestamp = now_ts
+
+            # Persist state in DynamoDB
+            try:
+                table.put_item(Item={
+                    "deviceId": state_pk,
+                    "timestamp": Decimal("0"),
+                    "last_sns_timestamp": Decimal(str(last_sns_timestamp)),
+                    "acknowledged": is_acknowledged,
+                    "status": status
+                })
+            except Exception as s_err:
+                print(f"Warning: Could not update alert state in DynamoDB: {s_err}")
+        else:
+            # Reset alert state on return to HEALTHY
+            if last_sns_timestamp > 0 or is_previously_ack:
+                try:
+                    table.put_item(Item={
+                        "deviceId": state_pk,
+                        "timestamp": Decimal("0"),
+                        "last_sns_timestamp": Decimal("0"),
+                        "acknowledged": False,
+                        "status": "HEALTHY"
+                    })
+                except Exception:
+                    pass
 
         return {
             "statusCode": 200,
