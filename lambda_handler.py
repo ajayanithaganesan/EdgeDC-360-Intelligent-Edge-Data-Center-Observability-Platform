@@ -76,8 +76,8 @@ def lambda_handler(event, context):
                 }
                 table.put_item(Item=sensor_item)
 
-        # Trigger SNS alert if status is WARNING or CRITICAL
-        if status in ["WARNING", "CRITICAL"]:
+        # Trigger SNS alert strictly for CRITICAL failures
+        if status == "CRITICAL":
             _send_sns_alert(site, rack_id, health_state, health_score, sensors, status)
 
         return {
@@ -119,40 +119,53 @@ def _determine_status(health_state: str, health_score: int, sensors: dict) -> st
 
 
 def _send_sns_alert(site: str, rack_id: str, health_state: str, health_score: int, sensors: dict, status: str) -> None:
-    """Send SNS alert when rack status is WARNING or CRITICAL."""
+    """Send SNS alert when rack status is CRITICAL."""
+    topic_arn = os.environ.get("SNS_TOPIC_ARN", "").strip()
+    if not topic_arn:
+        print("INFO: SNS_TOPIC_ARN environment variable not set. Skipping SNS alert dispatch.")
+        return
+
     try:
         sns = boto3.client("sns")
-        topic_arn = os.environ.get("SNS_TOPIC_ARN", "arn:aws:sns:us-east-1:YOUR_ACCOUNT_ID:EdgeDC360Alerts")
 
+        failed_sensors = []
         sensor_details = []
         for s_type, s_data in sensors.items():
             st = s_data.get("status", "healthy").upper()
             val = s_data.get("value", 0)
             unit = s_data.get("unit", "")
-            sensor_details.append(f"  - {s_type.capitalize()}: {val} {unit} [{st}]")
+            line = f"  - {s_type.capitalize()}: {val} {unit} [{st}]"
+            sensor_details.append(line)
+            if st in ["FAILED", "CRITICAL"]:
+                failed_sensors.append(f"{s_type.capitalize()} ({val} {unit})")
+
+        failure_summary = ", ".join(failed_sensors) if failed_sensors else "Multiple Anomalies"
 
         message = f"""========================================
-EdgeDC360 RACK TELEMETRY ALERT
+🚨 EdgeDC360 CRITICAL TELEMETRY ALERT 🚨
 ========================================
 
-Site: {site}
-Rack ID: {rack_id}
+Rack Location: {site}-{rack_id}
 Overall Status: {status}
-Health Score: {health_score}/100 ({health_state.upper()})
+Health Score: {health_score}/100 [{health_state.upper()}]
+Failed Components: {failure_summary}
 
-Sensor Readings Breakdown:
+Full Sensor Breakdown:
 {chr(10).join(sensor_details)}
 
-Action Required: Please inspect rack {site}-{rack_id} immediately.
+Immediate Action Required:
+Please dispatch technician to inspect rack {site}-{rack_id}.
+
+Timestamp: {datetime.utcnow().isoformat()}Z
 ========================================
 """
 
         sns.publish(
             TopicArn=topic_arn,
-            Subject=f"[{status}] Alert for Rack {site}-{rack_id}",
+            Subject=f"🚨 CRITICAL ALERT: Rack {site}-{rack_id} Failure ({failure_summary})",
             Message=message,
         )
-        print(f"SNS alert sent for {site}-{rack_id}")
+        print(f"SUCCESS: SNS critical alert dispatched to {topic_arn} for {site}-{rack_id}")
     except Exception as exc:
-        print(f"Warning: Could not send SNS alert: {exc}")
+        print(f"ERROR: Could not publish SNS alert: {exc}")
 
