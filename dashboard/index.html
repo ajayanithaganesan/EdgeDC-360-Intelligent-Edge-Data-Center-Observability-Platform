@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body class="dark-theme">
     <div class="app-container">
         <!-- Sidebar Navigation -->
@@ -58,9 +60,10 @@
                         <h1 id="current-dashboard-title">Live Operations Dashboard</h1>
                         <span class="active-location-badge" id="activeLocationBadge">Global Fleet</span>
                     </div>
-                    <p class="subtitle" id="current-dashboard-subtitle">Real-time telemetry and health status of critical infrastructure</p>
+                    <p class="subtitle" id="current-dashboard-subtitle">Real-time telemetry and health status of
+                        critical infrastructure</p>
                 </div>
-                
+
                 <div class="header-right">
                     <button class="btn-ack" id="btnAckAlert" style="display: none;">
                         <i class="fa-solid fa-bell-slash"></i> <span id="btnAckText">Acknowledge Alert</span>
@@ -216,7 +219,8 @@
 
                     <div class="charts-grid">
                         <div class="chart-card glass-panel">
-                            <h3><i class="fa-solid fa-chart-line"></i> <span id="liveChartTitle">Temperature Trend (Live)</span></h3>
+                            <h3><i class="fa-solid fa-chart-line"></i> <span id="liveChartTitle">Temperature Trend
+                                    (Live)</span></h3>
                             <div class="chart-container">
                                 <canvas id="liveTempChart"></canvas>
                             </div>
@@ -295,7 +299,8 @@
                 <section id="analytics" class="dashboard-view">
                     <div class="charts-grid analytics-grid">
                         <div class="chart-card glass-panel">
-                            <h3><i class="fa-solid fa-temperature-arrow-up"></i> Historical Temperature Trends (24h)</h3>
+                            <h3><i class="fa-solid fa-temperature-arrow-up"></i> Historical Temperature Trends (24h)
+                            </h3>
                             <div class="chart-container">
                                 <canvas id="analyticsTempChart"></canvas>
                             </div>
@@ -381,4 +386,5 @@
 
     <script src="app.js?v=2"></script>
 </body>
+
 </html>

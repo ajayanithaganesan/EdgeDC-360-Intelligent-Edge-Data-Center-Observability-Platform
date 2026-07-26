@@ -25,10 +25,15 @@ def _normalize_key(key: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(description="Run the live gateway pipeline with optional anomaly injection")
+    parser.add_argument("--sample-interval", type=float, default=2.0, help="Sensor sampling rate/frequency in seconds (default: 2.0)")
+    parser.add_argument("--batch-interval", type=float, default=10.0, help="Fog node payload dispatch rate/frequency to AWS in seconds (default: 10.0)")
     parser.add_argument("--fail-sensor", type=str, choices=["temperature", "humidity", "power", "ups", "cooling"], help="Force failure state on a sensor")
     parser.add_argument("--fail-value", type=float, help="Value to inject for the failed sensor")
     parser.add_argument("--fail-rack", type=str, default="Dublin-rack-01", help="Target rack ID to inject failure on (e.g. Dublin-rack-01)")
     args = parser.parse_args()
+
+    sample_interval = max(0.1, args.sample_interval)
+    batch_interval_seconds = max(1.0, args.batch_interval)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     config = load_config()
@@ -38,7 +43,9 @@ def main():
     print("==================================================", flush=True)
     print(f" Connecting to AWS Endpoint: {gateway_config.ENDPOINT}", flush=True)
     print(f" Target Topic:               {gateway_config.TOPIC}", flush=True)
-    print(f" Client ID:                   {gateway_config.CLIENT_ID}", flush=True)
+    print(f" Client ID:                  {gateway_config.CLIENT_ID}", flush=True)
+    print(f" Sensor Sampling Rate:       {sample_interval}s", flush=True)
+    print(f" Cloud Dispatch Rate:        {batch_interval_seconds}s", flush=True)
     if args.fail_sensor:
         print(f" ANOMALY INJECTION ACTIVE:   {args.fail_rack} -> {args.fail_sensor}={args.fail_value}", flush=True)
     print("==================================================", flush=True)
@@ -211,7 +218,7 @@ def main():
 
                 last_flush_time = now
 
-            time.sleep(2)
+            time.sleep(sample_interval)
 
     except KeyboardInterrupt:
         print("\nStopping Gateway...", flush=True)

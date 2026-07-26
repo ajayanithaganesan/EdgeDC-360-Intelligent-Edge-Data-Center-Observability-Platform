@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
             card.classList.add("active");
 
             selectedLocation = card.getAttribute("data-rack");
-            
+
             const labels = {
                 "global": "Global Fleet",
                 "dublin-rack-01": "Dublin Rack-01",
@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
             body.classList.add("dark-theme");
             themeSwitch.innerHTML = '<i class="fa-solid fa-moon"></i><span>Dark Mode</span>';
         }
-        
+
         const isDark = body.classList.contains("dark-theme");
         Chart.defaults.color = isDark ? "#94a3b8" : "#64748b";
         Chart.defaults.borderColor = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)";
@@ -284,10 +284,16 @@ document.addEventListener("DOMContentLoaded", () => {
         execSlaChart.update();
     }
 
+    const AWS_API_GATEWAY_URL = window.EDGE_API_URL || "https://yj0hurjgfl.execute-api.us-east-1.amazonaws.com/EdgeDC360GetMetrics";
+
     // Real-Time Backend Polling Function
     async function fetchTelemetry() {
         try {
-            const response = await fetch("/api/metrics");
+            const apiEndpoint = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+                ? "/api/metrics"
+                : AWS_API_GATEWAY_URL;
+
+            const response = await fetch(apiEndpoint);
             if (!response.ok) return;
             const data = await response.json();
 
@@ -296,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("fog-gen").innerText = Number(data.fog.generated || 0).toLocaleString();
                 document.getElementById("fog-filt").innerText = Number(data.fog.filtered || 0).toLocaleString();
                 document.getElementById("fog-up").innerText = Number(data.fog.uploaded || 0).toLocaleString();
-                
+
                 const latencyVal = data.fog.latency !== undefined ? data.fog.latency : 5;
                 document.getElementById("fog-lat").innerText = `${latencyVal} ms`;
                 fogLatencyChart.data.datasets[0].data = [latencyVal, 145.0];
@@ -356,7 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     selectedRacks.forEach(rk => {
                         const rData = racks[rk];
                         const s = rData.sensors || {};
-                        
+
                         const tempVal = s.temperature ? s.temperature.value : 22.5;
                         const humVal = s.humidity ? s.humidity.value : 45.0;
                         const upsVal = s.ups ? s.ups.value : 100.0;
