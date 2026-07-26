@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    let lastTelemetryData = null;
     let selectedSensorMetric = "temperature";
     const sensorKpiCards = document.querySelectorAll(".kpi-card[data-metric]");
     sensorKpiCards.forEach(card => {
@@ -36,7 +37,12 @@ document.addEventListener("DOMContentLoaded", () => {
             sensorKpiCards.forEach(c => c.classList.remove("active-sensor-card"));
             card.classList.add("active-sensor-card");
             selectedSensorMetric = card.getAttribute("data-metric") || "temperature";
-            fetchTelemetry();
+            if (lastTelemetryData) {
+                // Instant 0ms chart switch from client memory
+                renderTelemetryUI(lastTelemetryData);
+            } else {
+                fetchTelemetry();
+            }
         });
     });
 
@@ -284,18 +290,19 @@ document.addEventListener("DOMContentLoaded", () => {
         execSlaChart.update();
     }
 
-    const AWS_API_GATEWAY_URL = window.EDGE_API_URL || "https://yj0hurjgfl.execute-api.us-east-1.amazonaws.com/EdgeDC360GetMetrics";
+    const S3_METRICS_URL = "metrics_state.json";
 
     // Real-Time Backend Polling Function
     async function fetchTelemetry() {
         try {
             const apiEndpoint = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
                 ? "/api/metrics"
-                : AWS_API_GATEWAY_URL;
+                : S3_METRICS_URL + "?t=" + Date.now();
 
-            const response = await fetch(apiEndpoint);
+            const response = await fetch(apiEndpoint, { cache: "no-store" });
             if (!response.ok) return;
             const data = await response.json();
+            lastTelemetryData = data;
 
             // 1. Update Fog Layer Metrics
             if (data.fog) {
