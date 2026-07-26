@@ -15,7 +15,7 @@ venv/
 Thumbs.db
 
 # Certificates
-certificates/*.pem
+certificates/
 
 # Environment
 .env
