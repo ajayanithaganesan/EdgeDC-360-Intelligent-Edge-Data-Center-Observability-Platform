@@ -34,7 +34,7 @@ The platform demonstrates:
 * Demonstrate bandwidth reduction through Fog Computing
 * Build a scalable cloud backend using AWS
 * Store real-time and historical telemetry
-* Visualize infrastructure health using Grafana
+* Visualize infrastructure health using Enterprise Web Dashboard
 * Showcase an enterprise-grade distributed architecture
 
 ---
@@ -75,33 +75,33 @@ This architecture reduces cloud traffic while maintaining real-time visibility i
                                   |
                                   | MQTT
                                   |
-                     +------------v------------+
-                     |      Edge Gateway       |
-                     |-------------------------|
-                     | MQTT Subscriber         |
-                     | Rule Engine             |
-                     | Stream Processor        |
-                     | Batch Processor         |
-                     | Health Score Engine     |
-                     | SQLite Offline Buffer   |
-                     | AWS Publisher           |
+                      +-----------v-----------+
+                      |     Edge Gateway      |
+                      |-----------------------|
+                      | MQTT Subscriber       |
+                      | Rule Engine           |
+                      | Stream Processor      |
+                      | Batch Processor       |
+                      | Health Score Engine   |
+                      | SQLite Offline Buffer |
+                      | AWS Publisher         |
+                      +-----------+-----------+
+                                  |
+                                  | Mutual TLS (MQTT)
+                                  v
+                             AWS IoT Core
+                                  |
+                              IoT Rule
+                                  |
+                             AWS Lambda
                      +------------+------------+
-                                  |
-                                  |
-                           AWS IoT Core
-                                  |
-                           Amazon Kinesis
-                    +-------------+--------------+
-                    |                            |
-              Realtime Pipeline           Batch Pipeline
-                    |                            |
-              AWS Lambda                  Amazon S3
-                    |                            |
-              DynamoDB                    Athena (Optional)
-                    |                            |
-              Grafana Dashboard          Historical Analytics
-                    |
-              Amazon SNS Alerts
+                     |            |            |
+                     v            v            v
+                 DynamoDB     Amazon SNS    Amazon S3
+               (Telemetry)    (Alerts)    (JSON Sync)
+                                               |
+                                               v
+                                        S3 Web Dashboard
 ```
 
 ---
@@ -190,15 +190,11 @@ Edge Gateway
     ↓
 AWS IoT Core
     ↓
-Amazon Kinesis
-    ↓
 AWS Lambda
     ↓
-DynamoDB
+DynamoDB & Amazon S3
     ↓
-Grafana
-    ↓
-Amazon SNS
+Amazon SNS & S3 Dashboard
 ```
 
 ---
@@ -225,13 +221,11 @@ Edge Gateway
     ↓
 AWS IoT Core
     ↓
-Amazon Kinesis
+AWS Lambda
     ↓
 Amazon S3
     ↓
-Athena (Optional)
-    ↓
-Grafana
+S3 Web Dashboard
 ```
 
 ---
@@ -297,14 +291,11 @@ The platform uses the following AWS services.
 | Service                    | Purpose                    |
 | -------------------------- | -------------------------- |
 | AWS IoT Core               | IoT device connectivity    |
-| Amazon Kinesis             | Real-time streaming        |
-| AWS Lambda                 | Event processing           |
+| AWS Lambda                 | Core event processing      |
 | Amazon DynamoDB            | Real-time operational data |
-| Amazon S3                  | Historical storage         |
-| Amazon SNS                 | Alert notifications        |
-| Amazon CloudWatch          | Monitoring                 |
-| Grafana                    | Visualization              |
-| Amazon Athena *(Optional)* | Historical querying        |
+| Amazon S3                  | Web hosting & JSON sync    |
+| Amazon SNS                 | Critical alert notifications |
+| Amazon CloudWatch          | Operational monitoring     |
 
 ---
 
@@ -315,13 +306,17 @@ EdgeDC360/
 │
 ├── sensor_simulator/
 ├── edge_gateway/
-├── cloud/
 ├── dashboard/
 ├── shared/
+├── certificates/
 ├── docs/
 ├── .github/
 │   └── workflows/
 │
+├── scripts/
+│   ├── run_live_gateway.py
+│   └── test_manual_sensor_failure.py
+├── lambda_handler.py
 ├── requirements.txt
 ├── config.py
 ├── .env.example
@@ -353,21 +348,21 @@ EdgeDC360/
 
 * DynamoDB
 
-### Object Storage
+### Object Storage & Web Hosting
 
 * Amazon S3
-
-### Streaming
-
-* Amazon Kinesis
 
 ### Monitoring
 
 * CloudWatch
 
+### Alerting
+
+* Amazon SNS
+
 ### Dashboard
 
-* Grafana
+* HTML5 / CSS3 / JavaScript (Chart.js)
 
 ### Version Control
 
@@ -430,51 +425,21 @@ to
 
 Update the values according to your AWS configuration.
 
-## Run a local MQTT smoke test on Windows
+## Run Live AWS Gateway
 
-If you have Docker Desktop installed, you can run the broker, gateway, and simulator together with one command:
-
-```powershell
-.\scripts\run_mqtt_smoke_test.ps1
-```
-
-Optional arguments:
+Run the live gateway with configurable sampling and dispatch intervals:
 
 ```powershell
-.\scripts\run_mqtt_smoke_test.ps1 -Cycles 5 -Sleep 1
+python .\scripts\run_live_gateway.py --sample-interval 2 --batch-interval 10
 ```
 
-This script:
+## Run Manual Failure Injection Test
 
-- Starts a local Mosquitto broker in Docker
-- Launches the edge gateway in MQTT mode
-- Runs the sensor simulator against the broker
-- Cleans everything up afterward
-
-## Run without Docker
-
-If you do not want Docker, use the no-broker smoke test instead:
+Inject a critical temperature failure to test SNS alerts and dashboard updating:
 
 ```powershell
-python .\scripts\run_local_smoke_test.py
+python .\scripts\test_manual_sensor_failure.py --site Dublin --rack rack-01 --sensor temperature --value 88.0
 ```
-
-Optional:
-
-```powershell
-python .\scripts\run_local_smoke_test.py --cycles 3
-python .\scripts\run_local_smoke_test.py --buffer-offline
-```
-
-This verifies:
-
-- Sensor generation
-- JSON serialization and parsing
-- Edge processing
-- Health scoring
-- Optional SQLite buffering
-
-This is the recommended next step if you want to keep moving without a broker.
 
 ---
 
@@ -483,11 +448,11 @@ This is the recommended next step if you want to keep moving without a broker.
 | Component        | Status |
 | ---------------- | ------ |
 | Project Setup    | ✅      |
-| Sensor Simulator | 🚧 scaffolded |
-| Edge Gateway     | 🚧 scaffolded |
-| AWS Backend      | 🚧     |
-| Dashboards       | 🚧     |
-| Documentation    | 🚧 updating |
+| Sensor Simulator | ✅      |
+| Edge Gateway     | ✅      |
+| AWS Backend      | ✅      |
+| S3 Web Dashboard | ✅      |
+| Documentation    | ✅      |
 
 ---
 
