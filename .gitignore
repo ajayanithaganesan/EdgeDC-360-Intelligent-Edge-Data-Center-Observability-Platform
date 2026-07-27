@@ -34,10 +34,4 @@ metrics_state.json
 anomaly_active.json
 scripts/metrics_state.json
 
-# Scratch & Temporary Testing Files
-scratch/
-working Lambda code.py
-get_metrics_handler.py
-
-EdgeDC360_Project_Guidelines.md
-IMPLEMENTATION_LOG.md
+certificates/
