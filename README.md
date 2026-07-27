@@ -311,9 +311,6 @@ EdgeDC360/
 ├── shared/
 ├── certificates/
 ├── docs/
-├── .github/
-│   └── workflows/
-│
 ├── scripts/
 │   ├── run_live_gateway.py
 │   └── test_manual_sensor_failure.py
@@ -368,10 +365,6 @@ EdgeDC360/
 ### Version Control
 
 * Git & GitHub
-
-### CI
-
-* GitHub Actions
 
 ---
 
