@@ -34,4 +34,6 @@ metrics_state.json
 anomaly_active.json
 scripts/metrics_state.json
 
-certificates/
+tests/
+.env.example
+.gitignore
