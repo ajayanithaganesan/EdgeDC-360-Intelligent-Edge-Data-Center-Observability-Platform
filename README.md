@@ -103,7 +103,9 @@ This architecture reduces cloud traffic while maintaining real-time visibility i
                                                v
                                         S3 Web Dashboard
 ```
+## Architecture Diagram
 
+![Architecture Diagram](https://github.com/ajayanithaganesan/edge-dc360/blob/main/docs/EdgeDC360_Architecture%20Diagram.png)
 ---
 
 # 🧠 Why Fog Computing?
