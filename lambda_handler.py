@@ -2,7 +2,7 @@
 Updated Lambda handler for EdgeDC360 Aggregated Rack Data.
 
 Receives aggregated rack data with all 5 sensors combined and stores as ONE item in DynamoDB.
-Supports manual sensor failure updates and triggers SNS email alerting.
+Triggers SNS email alerting for CRITICAL failures (with 5-minute rate limiting cooldown) and syncs state to S3.
 """
 
 import json
@@ -42,7 +42,7 @@ def lambda_handler(event, context):
         # Determine overall status including individual sensor checks
         status = _determine_status(health_state, health_score, sensors)
 
-        # Build DynamoDB item with all 5 sensors (Option A: Primary Key = site-rack_id)
+        # Build DynamoDB item with all 5 sensors
         partition_key = f"{site}-{rack_id}"
         item = {
             "deviceId": partition_key,  # Partition key
@@ -59,49 +59,23 @@ def lambda_handler(event, context):
         table.put_item(Item=item)
         print("SUCCESS - Stored aggregated rack data")
 
-        # Optionally also store per-sensor partition key items (Option B: site-rack_id-sensortype)
-        if os.environ.get("SPLIT_SENSORS_PER_ITEM", "false").lower() == "true":
-            for sensor_type, s_data in sensors.items():
-                sensor_pk = f"{site}-{rack_id}-{sensor_type}"
-                sensor_item = {
-                    "deviceId": sensor_pk,
-                    "timestamp": Decimal(str(timestamp)),
-                    "site": site,
-                    "rack_id": rack_id,
-                    "sensor_type": sensor_type,
-                    "value": Decimal(str(s_data.get("value", 0))),
-                    "unit": s_data.get("unit", ""),
-                    "status": s_data.get("status", "healthy"),
-                    "health_score": Decimal(str(health_score)),
-                }
-                table.put_item(Item=sensor_item)
-
-        # Extract acknowledgment flag
-        acknowledged = bool(event.get("acknowledged", False))
-
         # Check existing alert tracking state from DynamoDB
         state_pk = f"STATE#{site}-{rack_id}"
         last_sns_timestamp = 0
-        is_previously_ack = False
 
         try:
             state_resp = table.get_item(Key={"deviceId": state_pk, "timestamp": Decimal("0")})
             if "Item" in state_resp:
                 last_sns_timestamp = int(state_resp["Item"].get("last_sns_timestamp", 0))
-                is_previously_ack = bool(state_resp["Item"].get("acknowledged", False))
         except Exception:
             pass
 
-        is_acknowledged = acknowledged or is_previously_ack
-
-        # Handle alert logic for CRITICAL status
+        # Handle alert logic for CRITICAL status (5 minutes / 300s cooldown default)
         if status == "CRITICAL":
             now_ts = timestamp
-            cooldown_seconds = int(os.environ.get("SNS_COOLDOWN_SECONDS", "120"))  # 2 minutes (120s) default
+            cooldown_seconds = int(os.environ.get("SNS_COOLDOWN_SECONDS", "300"))  # 5 minutes (300s) default
 
-            if is_acknowledged:
-                print(f"INFO: Critical alert for {site}-{rack_id} is ACKNOWLEDGED by operator. Skipping SNS dispatch.")
-            elif last_sns_timestamp > 0 and (now_ts - last_sns_timestamp) < cooldown_seconds:
+            if last_sns_timestamp > 0 and (now_ts - last_sns_timestamp) < cooldown_seconds:
                 elapsed = now_ts - last_sns_timestamp
                 print(f"INFO: SNS alert for {site}-{rack_id} rate-limited. Last sent {elapsed}s ago (cooldown: {cooldown_seconds}s). Skipping SNS.")
             else:
@@ -114,26 +88,24 @@ def lambda_handler(event, context):
                     "deviceId": state_pk,
                     "timestamp": Decimal("0"),
                     "last_sns_timestamp": Decimal(str(last_sns_timestamp)),
-                    "acknowledged": is_acknowledged,
                     "status": status
                 })
             except Exception as s_err:
                 print(f"Warning: Could not update alert state in DynamoDB: {s_err}")
         else:
             # Reset alert state on return to HEALTHY
-            if last_sns_timestamp > 0 or is_previously_ack:
+            if last_sns_timestamp > 0:
                 try:
                     table.put_item(Item={
                         "deviceId": state_pk,
                         "timestamp": Decimal("0"),
                         "last_sns_timestamp": Decimal("0"),
-                        "acknowledged": False,
                         "status": "HEALTHY"
                     })
                 except Exception:
                     pass
 
-        # Option B: Sync metrics_state.json directly to S3 Bucket for ultra-fast UI rendering
+        # Sync metrics_state.json directly to S3 Bucket for instant UI rendering
         s3_bucket_name = os.environ.get("S3_BUCKET_NAME", "edgedc360-dashboard-ajay")
         if s3_bucket_name:
             _sync_metrics_to_s3(s3_bucket_name, table)
@@ -267,7 +239,6 @@ def _sync_metrics_to_s3(bucket_name: str, table):
             status = str(item.get("status", "HEALTHY"))
             sensors = item.get("sensors", {})
             timestamp = str(item.get("timestamp", ""))
-            acknowledged = bool(item.get("acknowledged", False))
 
             # Convert DynamoDB Decimals in sensor dictionaries to float/int
             clean_sensors = {}
@@ -288,13 +259,12 @@ def _sync_metrics_to_s3(bucket_name: str, table):
                 "health_score": health_score,
                 "health_state": health_state,
                 "status": status,
-                "sensors": clean_sensors,
-                "acknowledged": acknowledged
+                "sensors": clean_sensors
             }
 
             if rack_key == "Dublin-rack-01" or "Dublin-rack-01" in device_id:
                 if timestamp:
-                    time_str = timestamp.split("T")[1][:8] if "T" in timestamp else timestamp
+                    time_str = timestamp.split("T")[1][:8] if "T" in timestamp else str(timestamp)
                     history_timestamps.append(time_str)
                     history_temp.append(float(clean_sensors.get("temperature", {}).get("value", 22.5)))
                     history_humidity.append(float(clean_sensors.get("humidity", {}).get("value", 45.0)))
@@ -342,5 +312,3 @@ def _sync_metrics_to_s3(bucket_name: str, table):
         print(f"SUCCESS: Uploaded live metrics_state.json to S3 bucket '{bucket_name}'")
     except Exception as s3_err:
         print(f"Warning: Could not sync metrics_state.json to S3: {s3_err}")
-
-

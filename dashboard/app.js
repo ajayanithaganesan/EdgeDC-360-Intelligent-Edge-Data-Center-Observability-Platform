@@ -39,31 +39,12 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedSensorMetric = card.getAttribute("data-metric") || "temperature";
             if (lastTelemetryData) {
                 // Instant 0ms chart switch from client memory
-                renderTelemetryUI(lastTelemetryData);
+                updateLiveTrendChart(lastTelemetryData);
             } else {
                 fetchTelemetry();
             }
         });
     });
-
-    const btnAckAlert = document.getElementById("btnAckAlert");
-    if (btnAckAlert) {
-        btnAckAlert.addEventListener("click", async () => {
-            try {
-                const res = await fetch("/api/acknowledge", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ rack_id: selectedLocation })
-                });
-                if (res.ok) {
-                    btnAckAlert.className = "btn-ack acked";
-                    btnAckAlert.innerHTML = '<i class="fa-solid fa-check-circle"></i> Alert Acknowledged (Silenced)';
-                }
-            } catch (err) {
-                console.log("Acknowledge error:", err);
-            }
-        });
-    }
 
     function updateCardClass(cardId, newClass) {
         const card = document.getElementById(cardId);
@@ -290,6 +271,60 @@ document.addEventListener("DOMContentLoaded", () => {
         execSlaChart.update();
     }
 
+    function updateLiveTrendChart(data) {
+        if (!data || !data.history || !data.history.timestamps || data.history.timestamps.length === 0) return;
+
+        const timeLabels = data.history.timestamps.map(t => {
+            if (typeof t === "string" && t.includes("T")) {
+                return t.split("T")[1].substring(0, 8);
+            }
+            return String(t);
+        });
+
+        const metricConfigs = {
+            temperature: { title: "Temperature Trend (Live)", label: "Temperature (°C)", color: "#3b82f6", yMin: 15, yMax: 95, data: data.history.temperature || [] },
+            humidity: { title: "Humidity Trend (Live)", label: "Humidity (%)", color: "#06b6d4", yMin: 0, yMax: 100, data: data.history.humidity || [] },
+            ups: { title: "UPS Battery Trend (Live)", label: "UPS Battery (%)", color: "#10b981", yMin: 0, yMax: 100, data: data.history.ups || [] },
+            cooling: { title: "Cooling Speed Trend (Live)", label: "Cooling Speed (RPM)", color: "#8b5cf6", yMin: 1000, yMax: 3500, data: data.history.cooling || [] },
+            power: { title: "Power Consumption Trend (Live)", label: "Power Load (kW)", color: "#f59e0b", yMin: 0, yMax: 10, data: (data.history.power || []).map(p => (p > 50 ? p / 1000.0 : p)) },
+            health: { title: "Rack Health Score Trend (Live)", label: "Health Score (/100)", color: "#10b981", yMin: 0, yMax: 100, data: data.history.health || [] }
+        };
+
+        const currentConfig = metricConfigs[selectedSensorMetric] || metricConfigs.temperature;
+        const liveChartTitleElem = document.getElementById("liveChartTitle");
+        if (liveChartTitleElem) {
+            liveChartTitleElem.innerText = currentConfig.title;
+        }
+
+        liveTempChart.data.labels = timeLabels;
+        liveTempChart.data.datasets[0].label = currentConfig.label;
+        liveTempChart.data.datasets[0].borderColor = currentConfig.color;
+        liveTempChart.data.datasets[0].backgroundColor = currentConfig.color + "1a";
+        liveTempChart.data.datasets[0].data = currentConfig.data;
+        if (liveTempChart.options.scales && liveTempChart.options.scales.y) {
+            liveTempChart.options.scales.y.min = currentConfig.yMin;
+            liveTempChart.options.scales.y.max = currentConfig.yMax;
+        }
+        liveTempChart.update();
+
+        // Cooling Efficiency Chart
+        analyticsCoolingChart.data.labels = timeLabels;
+        analyticsCoolingChart.data.datasets[0].data = data.history.cooling || [];
+        analyticsCoolingChart.update();
+
+        // UPS Battery Chart
+        analyticsUpsChart.data.labels = timeLabels;
+        analyticsUpsChart.data.datasets[0].data = data.history.ups || [];
+        analyticsUpsChart.update();
+
+        // Executive SLA / Health Score Trend Chart
+        execSlaChart.data.labels = timeLabels;
+        const tempHistory = data.history.temperature || [];
+        const healthHistory = tempHistory.map(temp => (temp > 35 ? 0 : temp > 28 ? 60 : 98));
+        execSlaChart.data.datasets[0].data = healthHistory;
+        execSlaChart.update();
+    }
+
     const S3_METRICS_URL = "metrics_state.json";
 
     // Real-Time Backend Polling Function
@@ -474,23 +509,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateCardClass("exec-card-alerts", globalCriticals > 0 ? "card-critical" : "card-healthy");
                     updateCardClass("exec-card-warnings", globalWarnings > 0 ? "card-warning" : "card-healthy");
 
-                    // Pulse Indicator & Acknowledge Alert Button State
-                    const isAnyAcked = selectedRacks.some(rk => racks[rk] && racks[rk].acknowledged);
-                    if (btnAckAlert) {
-                        if (activeCriticals > 0 || globalCriticals > 0) {
-                            btnAckAlert.style.display = "inline-flex";
-                            if (isAnyAcked) {
-                                btnAckAlert.className = "btn-ack acked";
-                                btnAckAlert.innerHTML = '<i class="fa-solid fa-check-circle"></i> Alert Acknowledged (Silenced)';
-                            } else {
-                                btnAckAlert.className = "btn-ack";
-                                btnAckAlert.innerHTML = '<i class="fa-solid fa-bell-slash"></i> Acknowledge Alert';
-                            }
-                        } else {
-                            btnAckAlert.style.display = "none";
-                        }
-                    }
-
                     if (activeCriticals > 0) {
                         document.getElementById("systemStatusText").innerText = "System Critical Alert";
                         document.getElementById("systemPulseDot").className = "pulse-dot critical";
@@ -523,58 +541,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // 3. Update History Line Charts across dashboards
-            if (data.history && data.history.timestamps && data.history.timestamps.length > 0) {
-                const timeLabels = data.history.timestamps.map(t => {
-                    if (t.includes("T")) {
-                        return t.split("T")[1].substring(0, 8);
-                    }
-                    return t;
-                });
-
-                // Dynamic Live Trend Chart based on selected sensor card
-                const metricConfigs = {
-                    temperature: { title: "Temperature Trend (Live)", label: "Temperature (°C)", color: "#3b82f6", yMin: 15, yMax: 95, data: data.history.temperature || [] },
-                    humidity: { title: "Humidity Trend (Live)", label: "Humidity (%)", color: "#06b6d4", yMin: 0, yMax: 100, data: data.history.humidity || [] },
-                    ups: { title: "UPS Battery Trend (Live)", label: "UPS Battery (%)", color: "#10b981", yMin: 0, yMax: 100, data: data.history.ups || [] },
-                    cooling: { title: "Cooling Speed Trend (Live)", label: "Cooling Speed (RPM)", color: "#8b5cf6", yMin: 1000, yMax: 3500, data: data.history.cooling || [] },
-                    power: { title: "Power Consumption Trend (Live)", label: "Power Load (kW)", color: "#f59e0b", yMin: 0, yMax: 10, data: (data.history.power || []).map(p => (p > 50 ? p / 1000.0 : p)) },
-                    health: { title: "Rack Health Score Trend (Live)", label: "Health Score (/100)", color: "#10b981", yMin: 0, yMax: 100, data: data.history.health || [] }
-                };
-
-                const currentConfig = metricConfigs[selectedSensorMetric] || metricConfigs.temperature;
-                const liveChartTitleElem = document.getElementById("liveChartTitle");
-                if (liveChartTitleElem) {
-                    liveChartTitleElem.innerText = currentConfig.title;
-                }
-
-                liveTempChart.data.labels = timeLabels;
-                liveTempChart.data.datasets[0].label = currentConfig.label;
-                liveTempChart.data.datasets[0].borderColor = currentConfig.color;
-                liveTempChart.data.datasets[0].backgroundColor = currentConfig.color + "1a";
-                liveTempChart.data.datasets[0].data = currentConfig.data;
-                if (liveTempChart.options.scales && liveTempChart.options.scales.y) {
-                    liveTempChart.options.scales.y.min = currentConfig.yMin;
-                    liveTempChart.options.scales.y.max = currentConfig.yMax;
-                }
-                liveTempChart.update();
-
-                // Cooling Efficiency Chart
-                analyticsCoolingChart.data.labels = timeLabels;
-                analyticsCoolingChart.data.datasets[0].data = data.history.cooling;
-                analyticsCoolingChart.update();
-
-                // UPS Battery Chart
-                analyticsUpsChart.data.labels = timeLabels;
-                analyticsUpsChart.data.datasets[0].data = data.history.ups;
-                analyticsUpsChart.update();
-
-                // Executive SLA / Health Score Trend Chart
-                execSlaChart.data.labels = timeLabels;
-                const healthHistory = data.history.temperature.map(temp => (temp > 35 ? 0 : temp > 28 ? 60 : 98));
-                execSlaChart.data.datasets[0].data = healthHistory;
-                execSlaChart.update();
-            }
+                    // 3. Update History Line Charts across dashboards
+                    updateLiveTrendChart(data);
 
             // Last Updated Timestamp
             const now = new Date();
