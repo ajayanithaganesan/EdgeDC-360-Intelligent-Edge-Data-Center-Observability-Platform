@@ -91,7 +91,7 @@ This architecture reduces cloud traffic while maintaining real-time visibility i
                                   v
                              AWS IoT Core
                                   |
-                              IoT Rule
+                               IoT Rule ──(Error Action Fallback)──► Amazon SQS Queue
                                   |
                              AWS Lambda
                      +------------+------------+
@@ -291,6 +291,7 @@ The platform uses the following AWS services.
 | Service                    | Purpose                    |
 | -------------------------- | -------------------------- |
 | AWS IoT Core               | IoT device connectivity    |
+| Amazon SQS                 | Error Action Fallback Queue|
 | AWS Lambda                 | Core event processing      |
 | Amazon DynamoDB            | Real-time operational data |
 | Amazon S3                  | Web hosting & JSON sync    |
