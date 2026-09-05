@@ -284,6 +284,29 @@ High-level KPIs:
 * Estimated bandwidth savings
 * System availability
 
+## Application Pages
+
+The live application pages are shown below. These screenshots are stored in the [`docs`](docs/) folder.
+
+<table>
+  <tr>
+    <th>Live Operations Dashboard</th>
+    <th>Fog Computing Analytics Dashboard</th>
+  </tr>
+  <tr>
+    <td><img src="docs/LiveOperations%20Dashboard%20Image%20from%20hosted%20web%20app%20in%20S3%20Bucket.png" alt="Live Operations Dashboard" width="100%"></td>
+    <td><img src="docs/Fog%20Computing%20Analytics%20Dashboard.png" alt="Fog Computing Analytics Dashboard" width="100%"></td>
+  </tr>
+  <tr>
+    <th>Infrastructure Analytics Dashboard</th>
+    <th>Executive Dashboard</th>
+  </tr>
+  <tr>
+    <td><img src="docs/Infrastructure%20Analytics%20Dashboard.png" alt="Infrastructure Analytics Dashboard" width="100%"></td>
+    <td><img src="docs/Executive%20Dashboard.png" alt="Executive Dashboard" width="100%"></td>
+  </tr>
+</table>
+
 ---
 
 # ☁️ AWS Services
