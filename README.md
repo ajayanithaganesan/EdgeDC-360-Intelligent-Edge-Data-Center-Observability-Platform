@@ -1,4 +1,4 @@
-# 🚀 EdgeDC360
+# 🚀 EdgeDC 360 — Intelligent Edge Data Center Observability Platform
 
 > **Enterprise Edge Data Center Operations Platform using Fog Computing and AWS**
 
